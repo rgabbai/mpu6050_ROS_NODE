@@ -4,7 +4,7 @@ import smbus                     #import SMBus module of I2C
 from rclpy.node import Node
 #from std_srvs.srv import Trigger, Trigger_Response
 from std_srvs.srv import Trigger
-
+from time import sleep  
 
 
 
@@ -19,6 +19,8 @@ ACCEL_ZOUT_H = 0x3F
 GYRO_XOUT_H  = 0x43
 GYRO_YOUT_H  = 0x45
 GYRO_ZOUT_H  = 0x47
+SAMPLES      = 1000  # calibration reads
+
 
 #bus = smbus.SMBus(6) 	# I2C ch6 
 #Device_Address = 0x68   # MPU6050 device address
@@ -33,6 +35,27 @@ class ImuPublisherNode(Node):
         self.bus = smbus.SMBus(6)   # I2C ch6
         self.Device_Address = 0x68  # MPU6050 device address
         self.MPU_Init()
+
+        self.acc_x_avg = 0.0
+        self.acc_y_avg = 0.0
+        self.acc_z_avg = 0.0
+        self.gyro_x_avg = 0.0
+        self.gyro_y_avg = 0.0
+        self.gyro_z_avg = 0.0
+
+        #filter
+        self.acc_x_filtered = 0.0
+        self.acc_y_filtered = 0.0
+        self.acc_z_filtered = 0.0
+        self.gyro_x_filtered = 0.0
+        self.gyro_y_filtered = 0.0
+        self.gyro_z_filtered = 0.0
+
+        self.alpha = 0.2  # Filter constant, adjust as needed
+
+
+    def low_pass_filter(self, current_value, last_filtered_value):
+        return self.alpha * current_value + (1 - self.alpha) * last_filtered_value
 
     def MPU_Init(self):
         #write to sample rate register
@@ -67,11 +90,52 @@ class ImuPublisherNode(Node):
 
 
 
-     # Add your calibration methods here
-    #def calibrate_accelerometer(self):
-    #     # Accelerometer calibration logic
-    #def calibrate_gyroscope(self):
-    #     # Gyroscope calibration logic
+    def calibrate_accelerometer(self, num_samples=SAMPLES):
+        acc_x_total = 0
+        acc_y_total = 0
+        acc_z_total = 0
+        rate = self.create_rate(100)  # 100 Hz rate, equivalent to 0.01s sleep
+
+        for i in range(num_samples):
+            #print(i)
+            print(".", end="", flush=True)
+            acc_x_total += self.read_raw_data(ACCEL_XOUT_H)
+            acc_y_total += self.read_raw_data(ACCEL_YOUT_H)
+            acc_z_total += self.read_raw_data(ACCEL_ZOUT_H)
+            #rate.sleep()
+            sleep(0.001)
+
+        print("")
+        # Average values
+        self.acc_x_avg = acc_x_total / num_samples
+        self.acc_y_avg = acc_y_total / num_samples
+        self.acc_z_avg = acc_z_total / num_samples - 16384  # Subtract 1g (gravity)
+
+        #return (acc_x_avg, acc_y_avg, acc_z_avg)
+
+    def calibrate_gyroscope(self, num_samples=SAMPLES):
+        gyro_x_total = 0
+        gyro_y_total = 0
+        gyro_z_total = 0
+ 
+        rate = self.create_rate(100)  # 100 Hz rate, equivalent to 0.01s sleep
+
+        for i in range(num_samples):
+            #print(i)
+            print(".", end="", flush=True)
+            gyro_x_total += self.read_raw_data(GYRO_XOUT_H)
+            gyro_y_total += self.read_raw_data(GYRO_YOUT_H)
+            gyro_z_total += self.read_raw_data(GYRO_ZOUT_H)
+            #rate.sleep()
+            sleep(0.01)
+
+        print("")
+        # Average values
+        self.gyro_x_avg = gyro_x_total / num_samples
+        self.gyro_y_avg = gyro_y_total / num_samples
+        self.gyro_z_avg = gyro_z_total / num_samples
+
+        #return (gyro_x_avg, gyro_y_avg, gyro_z_avg)
 
 
 
@@ -82,8 +146,11 @@ class ImuPublisherNode(Node):
         #self.get_logger().info('Calibrating IMU with: '+str(request)+" "+str(resp))
 
         # Perform calibration
-        # Example: self.calibrate_accelerometer()
-        # Example: self.calibrate_gyroscope()
+        self.get_logger().info('Start calibrating IMU accelerometer')
+        self.calibrate_accelerometer() 
+        self.get_logger().info('Start calibrating IMU gyroscope')
+        self.calibrate_gyroscope()
+
         response = Trigger.Response()
         response.success = True
         response.message = "IMU Calibration completed successfully"
@@ -104,32 +171,50 @@ class ImuPublisherNode(Node):
 
 
         # Your sensor reading and processing code here
-        acc_x = self.read_raw_data(ACCEL_XOUT_H)
-        acc_y = self.read_raw_data(ACCEL_YOUT_H)
-        acc_z = self.read_raw_data(ACCEL_ZOUT_H)
+        acc_x = self.read_raw_data(ACCEL_XOUT_H)-self.acc_x_avg
+        acc_y = self.read_raw_data(ACCEL_YOUT_H)-self.acc_y_avg
+        acc_z = self.read_raw_data(ACCEL_ZOUT_H)-self.acc_z_avg
+
 
         #print("Read Gyroscope raw value")
-        gyro_x = self.read_raw_data(GYRO_XOUT_H)
-        gyro_y = self.read_raw_data(GYRO_YOUT_H)
-        gyro_z = self.read_raw_data(GYRO_ZOUT_H)
+        gyro_x = self.read_raw_data(GYRO_XOUT_H)-self.gyro_x_avg
+        gyro_y = self.read_raw_data(GYRO_YOUT_H)-self.gyro_y_avg
+        gyro_z = self.read_raw_data(GYRO_ZOUT_H)-self.gyro_z_avg
 
 ##      #Full scale range +/- 250 degree/C as per sensitivity scale factor
         Ax = acc_x/16384.0
         Ay = acc_y/16384.0
         Az = acc_z/16384.0
-##      
-        Gx = gyro_x/131.0
-        Gy = gyro_y/131.0
-        Gz = gyro_z/131.0
+##     
+        gf = 131.0   
+        #gf = 20.0
+      
+        Gx = gyro_x/gf
+        Gy = gyro_y/gf
+        Gz = gyro_z/gf
+
+        # Apply the low-pass filter to the accelerometer data
+        self.acc_x_filtered = self.low_pass_filter(Ax, self.acc_x_filtered)
+        self.acc_y_filtered = self.low_pass_filter(Ay, self.acc_y_filtered)
+        self.acc_z_filtered = self.low_pass_filter(Az, self.acc_z_filtered)
+
+        # Apply the low-pass filter to the gyroscope data
+        self.gyro_x_filtered = self.low_pass_filter(Gx, self.gyro_x_filtered)
+        self.gyro_y_filtered = self.low_pass_filter(Gy, self.gyro_y_filtered)
+        self.gyro_z_filtered = self.low_pass_filter(Gz, self.gyro_z_filtered)
+
+
+
+
 
         # Fill in the IMU message with the sensor data
         # Modify imu_msg.linear_acceleration and imu_msg.angular_velocity as needed
-        imu_msg.linear_acceleration.x = Ax
-        imu_msg.linear_acceleration.y = Ay
-        imu_msg.linear_acceleration.z = Az
-        imu_msg.angular_velocity.x = Gx
-        imu_msg.angular_velocity.y = Gy
-        imu_msg.angular_velocity.z = Gz
+        imu_msg.linear_acceleration.x = self.acc_x_filtered
+        imu_msg.linear_acceleration.y = self.acc_y_filtered
+        imu_msg.linear_acceleration.z = self.acc_z_filtered
+        imu_msg.angular_velocity.x = self.gyro_x_filtered
+        imu_msg.angular_velocity.y = self.gyro_y_filtered
+        imu_msg.angular_velocity.z = self.gyro_z_filtered
        # print ("Gx=%.2f" %Gx, u'\u00b0'+ "/s", "\tGy=%.2f" %Gy, u'\u00b0'+ "/s", "\tGz=%.2f" %Gz, u'\u00b0'+ "/s", "\tAx=%.2f g" %Ax, "\tAy=%.2f g" %Ay, "\tAz=%.2f g" %Az)
         # Publishing the IMU message
         self.imu_publisher.publish(imu_msg)
