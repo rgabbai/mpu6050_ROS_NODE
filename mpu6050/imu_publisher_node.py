@@ -109,7 +109,7 @@ class ImuPublisherNode(Node):
         self.acc_x_avg = acc_x_total / num_samples
         self.acc_y_avg = acc_y_total / num_samples
         self.acc_z_avg = acc_z_total / num_samples - 16384  # Subtract 1g (gravity)
-        print("gyro offset X:"+str(self.acc_x_avg ) + " Y:"+str(self.acc_y_avg)+" Z:"+str( self.acc_z_avg))
+        print("Acc offset X:"+str(self.acc_x_avg ) + " Y:"+str(self.acc_y_avg)+" Z:"+str( self.acc_z_avg))
 
         #return (acc_x_avg, acc_y_avg, acc_z_avg)
 
@@ -132,7 +132,7 @@ class ImuPublisherNode(Node):
         self.gyro_x_avg = gyro_x_total / num_samples
         self.gyro_y_avg = gyro_y_total / num_samples
         self.gyro_z_avg = gyro_z_total / num_samples
-        print("gyro offset X:"+str(self.gyro_x_avg ) + " Y:"+str(self.gyro_y_avg)+" Z:"+str( self.gyro_z_avg))
+        print("Gyro offset X:"+str(self.gyro_x_avg ) + " Y:"+str(self.gyro_y_avg)+" Z:"+str( self.gyro_z_avg))
         #return (gyro_x_avg, gyro_y_avg, gyro_z_avg)
 
 
