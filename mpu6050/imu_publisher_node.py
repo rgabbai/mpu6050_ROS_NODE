@@ -63,6 +63,14 @@ class ImuPublisherNode(Node):
 
     def publish_imu_data(self):
         imu_msg = Imu()
+
+        # Update the timestamp in the header
+        now = self.get_clock().now()
+        imu_msg.header.stamp.sec = now.seconds_nanoseconds()[0]
+        imu_msg.header.stamp.nanosec = now.seconds_nanoseconds()[1]
+        imu_msg.header.frame_id = "mpu6050"
+
+
         # Your sensor reading and processing code here
         acc_x = self.read_raw_data(ACCEL_XOUT_H)
         acc_y = self.read_raw_data(ACCEL_YOUT_H)
