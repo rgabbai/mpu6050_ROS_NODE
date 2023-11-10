@@ -7,7 +7,7 @@ from std_srvs.srv import Trigger
 from time import sleep  
 
 
-
+# MPU650 
 PWR_MGMT_1   = 0x6B
 SMPLRT_DIV   = 0x19
 CONFIG       = 0x1A
@@ -19,8 +19,9 @@ ACCEL_ZOUT_H = 0x3F
 GYRO_XOUT_H  = 0x43
 GYRO_YOUT_H  = 0x45
 GYRO_ZOUT_H  = 0x47
-SAMPLES      = 1000  # calibration reads
-
+# Calibration constants
+SAMPLES      = 2000  # calibration reads
+TIME_BTWEEN_SAMPLE = 0.001  # 1ms
 
 #bus = smbus.SMBus(6) 	# I2C ch6 
 #Device_Address = 0x68   # MPU6050 device address
@@ -94,7 +95,6 @@ class ImuPublisherNode(Node):
         acc_x_total = 0
         acc_y_total = 0
         acc_z_total = 0
-        rate = self.create_rate(100)  # 100 Hz rate, equivalent to 0.01s sleep
 
         for i in range(num_samples):
             #print(i)
@@ -102,14 +102,14 @@ class ImuPublisherNode(Node):
             acc_x_total += self.read_raw_data(ACCEL_XOUT_H)
             acc_y_total += self.read_raw_data(ACCEL_YOUT_H)
             acc_z_total += self.read_raw_data(ACCEL_ZOUT_H)
-            #rate.sleep()
-            sleep(0.001)
+            sleep(TIME_BTWEEN_SAMPLE)
 
         print("")
         # Average values
         self.acc_x_avg = acc_x_total / num_samples
         self.acc_y_avg = acc_y_total / num_samples
         self.acc_z_avg = acc_z_total / num_samples - 16384  # Subtract 1g (gravity)
+        print("gyro offset X:"+str(self.acc_x_avg ) + " Y:"+str(self.acc_y_avg)+" Z:"+str( self.acc_z_avg))
 
         #return (acc_x_avg, acc_y_avg, acc_z_avg)
 
@@ -118,7 +118,6 @@ class ImuPublisherNode(Node):
         gyro_y_total = 0
         gyro_z_total = 0
  
-        rate = self.create_rate(100)  # 100 Hz rate, equivalent to 0.01s sleep
 
         for i in range(num_samples):
             #print(i)
@@ -126,15 +125,14 @@ class ImuPublisherNode(Node):
             gyro_x_total += self.read_raw_data(GYRO_XOUT_H)
             gyro_y_total += self.read_raw_data(GYRO_YOUT_H)
             gyro_z_total += self.read_raw_data(GYRO_ZOUT_H)
-            #rate.sleep()
-            sleep(0.01)
+            sleep(TIME_BTWEEN_SAMPLE)
 
         print("")
         # Average values
         self.gyro_x_avg = gyro_x_total / num_samples
         self.gyro_y_avg = gyro_y_total / num_samples
         self.gyro_z_avg = gyro_z_total / num_samples
-
+        print("gyro offset X:"+str(self.gyro_x_avg ) + " Y:"+str(self.gyro_y_avg)+" Z:"+str( self.gyro_z_avg))
         #return (gyro_x_avg, gyro_y_avg, gyro_z_avg)
 
 
