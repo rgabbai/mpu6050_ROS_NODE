@@ -2,6 +2,11 @@ import rclpy
 from sensor_msgs.msg import Imu  # IMU type msg topic 
 import smbus                     #import SMBus module of I2C
 from rclpy.node import Node
+#from std_srvs.srv import Trigger, Trigger_Response
+from std_srvs.srv import Trigger
+
+
+
 
 PWR_MGMT_1   = 0x6B
 SMPLRT_DIV   = 0x19
@@ -22,6 +27,8 @@ class ImuPublisherNode(Node):
     def __init__(self):
         super().__init__('imu_publisher_node')
         self.imu_publisher = self.create_publisher(Imu, 'mpu6050/imu/data', 10)
+        #self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
+        self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
         self.timer = self.create_timer(0.1, self.publish_imu_data)  # publish every 0.1 sec - Adjust the timer period as needed
         self.bus = smbus.SMBus(6)   # I2C ch6
         self.Device_Address = 0x68  # MPU6050 device address
@@ -57,6 +64,31 @@ class ImuPublisherNode(Node):
         if(value > 32768):
                 value = value - 65536
         return value
+
+
+
+     # Add your calibration methods here
+    #def calibrate_accelerometer(self):
+    #     # Accelerometer calibration logic
+    #def calibrate_gyroscope(self):
+    #     # Gyroscope calibration logic
+
+
+
+    def handle_calibration_request(self, request, resp):
+        # Code to perform calibration
+        # You can add your accelerometer and gyroscope calibration logic here
+        self.get_logger().info('Calibrating IMU...')
+        #self.get_logger().info('Calibrating IMU with: '+str(request)+" "+str(resp))
+
+        # Perform calibration
+        # Example: self.calibrate_accelerometer()
+        # Example: self.calibrate_gyroscope()
+        response = Trigger.Response()
+        response.success = True
+        response.message = "IMU Calibration completed successfully"
+        return response
+
 
 
 
