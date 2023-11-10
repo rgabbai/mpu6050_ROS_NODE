@@ -19,9 +19,17 @@ ACCEL_ZOUT_H = 0x3F
 GYRO_XOUT_H  = 0x43
 GYRO_YOUT_H  = 0x45
 GYRO_ZOUT_H  = 0x47
+
+ACC_FACTOR   = 16384.0     # 2g
+GYRO_FACTOR  = 131.0       # +/-250
+TEMP_A       = 340.0       # C = temp_raw/TEMP_A+TEMP_B
+TEMP_B       = 36.53
+
 # Calibration constants
 SAMPLES      = 2000  # calibration reads
 TIME_BTWEEN_SAMPLE = 0.001  # 1ms
+LPF_A        = 0.1   # Low pass filter alfa 
+
 
 #bus = smbus.SMBus(6) 	# I2C ch6 
 #Device_Address = 0x68   # MPU6050 device address
@@ -52,7 +60,7 @@ class ImuPublisherNode(Node):
         self.gyro_y_filtered = 0.0
         self.gyro_z_filtered = 0.0
 
-        self.alpha = 0.2  # Filter constant, adjust as needed
+        self.alpha = LPF_A  # Filter constant, adjust as needed
 
 
     def low_pass_filter(self, current_value, last_filtered_value):
@@ -180,16 +188,13 @@ class ImuPublisherNode(Node):
         gyro_z = self.read_raw_data(GYRO_ZOUT_H)-self.gyro_z_avg
 
 ##      #Full scale range +/- 250 degree/C as per sensitivity scale factor
-        Ax = acc_x/16384.0
-        Ay = acc_y/16384.0
-        Az = acc_z/16384.0
-##     
-        gf = 131.0   
-        #gf = 20.0
+        Ax = acc_x/ACC_FACTOR
+        Ay = acc_y/ACC_FACTOR
+        Az = acc_z/ACC_FACTOR    
       
-        Gx = gyro_x/gf
-        Gy = gyro_y/gf
-        Gz = gyro_z/gf
+        Gx = gyro_x/GYRO_FACTOR
+        Gy = gyro_y/GYRO_FACTOR
+        Gz = gyro_z/GYRO_FACTOR
 
         # Apply the low-pass filter to the accelerometer data
         self.acc_x_filtered = self.low_pass_filter(Ax, self.acc_x_filtered)
