@@ -60,7 +60,7 @@ class ImuPublisherNode(Node):
         self.gyro_z_filtered = 0.0
         self.alpha = LPF_A  # Filter constant, adjust as needed
 
-        self.timer = self.create_timer(1.0, self.publish_imu_data)  # publish every 0.1 sec - Adjust the timer period as needed
+        self.timer = self.create_timer(0.001, self.publish_imu_data)  # publish every 1 msec - Adjust the timer period as needed
 
 
     def low_pass_filter(self, current_value, last_filtered_value):
