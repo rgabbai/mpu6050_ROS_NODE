@@ -22,7 +22,7 @@ GYRO_ZOUT_H  = 0x47
 
 ACC_FACTOR   = 16384.0     #mpu6050 spec for  2g
 GYRO_FACTOR  = 131.0       #mpu6050 spec for  +/-250
-GYRO_TUNE    = 7.2222222   # for tuning 90 in reality to 90 in yaw - TBD
+GYRO_TUNE    = 14.44       # for tuning 90 in reality to 90 in yaw - TBD
 TEMP_A       = 340.0       # C = temp_raw/TEMP_A+TEMP_B
 TEMP_B       = 36.53
 
