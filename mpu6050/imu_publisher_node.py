@@ -192,9 +192,9 @@ class ImuPublisherNode(Node):
         Ay = acc_y/ACC_FACTOR
         Az = acc_z/ACC_FACTOR    
       
-        Gx = gyro_x/GYRO_FACTOR
-        Gy = gyro_y/GYRO_FACTOR
-        Gz = gyro_z/GYRO_FACTOR
+        Gx = gyro_x/GYRO_FACTOR/2.0
+        Gy = gyro_y/GYRO_FACTOR/2.0
+        Gz = gyro_z/GYRO_FACTOR/2.0
 
         # Apply the low-pass filter to the accelerometer data
         self.acc_x_filtered = self.low_pass_filter(Ax, self.acc_x_filtered)
