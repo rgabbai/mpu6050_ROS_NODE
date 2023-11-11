@@ -52,6 +52,15 @@ class ImuPublisherNode(Node):
         self.gyro_y_avg = 0.0
         self.gyro_z_avg = 0.0
 
+        if self.load_calibration_from_json():
+            self.get_logger().info('MPU650 calibration file found,loading calibration data done.')
+        else:
+            self.get_logger().warning('Warning MPU650 calibration file was not found.')
+            self.get_logger().info('Perform the following calibration steps:')
+            self.get_logger().info('1. Place mpu6050 is in correct position ')
+            self.get_logger().info('2. issue service request: ros2 service call /calibrate_imu std_srvs/srv/Trigger \"\{\}\"')
+
+ 
         #filter
         self.acc_x_filtered = 0.0
         self.acc_y_filtered = 0.0
@@ -174,13 +183,14 @@ class ImuPublisherNode(Node):
     def handle_calibration_request(self, request, resp):
         # Code to perform calibration
         # You can add your accelerometer and gyroscope calibration logic here
-        self.get_logger().info('Recived calibrating MPU650 Reques...')
+        self.get_logger().info('Recived calibrating MPU650 Request...')
         #self.get_logger().info('Calibrating IMU with: '+str(request)+" "+str(resp))
         response = Trigger.Response()
 
         
         if self.load_calibration_from_json():
-            self.get_logger().info('MPU650 calibration file found,loading calibration data done.')
+            self.get_logger().info('MPU650 calibration file was found,loading calibration data done.')
+            self.get_logger().warning('If you desire to recalibrate delet the file: mpu650_calibration.json first.')
             response.success = True
             response.message = "IMU Calibration loaded successfully"
             return response
