@@ -53,7 +53,7 @@ class ImuPublisherNode(Node):
         self.gyro_z_avg = 0.0
 
         if self.load_calibration_from_json():
-            self.get_logger().info('MPU650 calibration file found,loading calibration data done.')
+            self.get_logger().info('MPU6050 calibration file found,loading calibration data done.')
         else:
             self.get_logger().warning('Warning MPU650 calibration file was not found.')
             self.get_logger().info('Perform the following calibration steps:')
@@ -107,7 +107,7 @@ class ImuPublisherNode(Node):
                 value = value - 65536
         return value
 
-    def save_calibration_to_json(self, filename="mpu650_calibration.json"):
+    def save_calibration_to_json(self, filename="mpu6050_calibration.json"):
         calibration_data = {
             "acc_x_avg": self.acc_x_avg,
             "acc_y_avg": self.acc_y_avg,
@@ -165,7 +165,7 @@ class ImuPublisherNode(Node):
         #return (gyro_x_avg, gyro_y_avg, gyro_z_avg)
 
 
-    def load_calibration_from_json(self, filename="mpu650_calibration.json"):
+    def load_calibration_from_json(self, filename="mpu6050_calibration.json"):
         try:
             with open(filename, "r") as file:
                 calibration_data = json.load(file)
@@ -190,7 +190,7 @@ class ImuPublisherNode(Node):
         
         if self.load_calibration_from_json():
             self.get_logger().info('MPU650 calibration file was found,loading calibration data done.')
-            self.get_logger().warning('If you desire to recalibrate delet the file: mpu650_calibration.json first.')
+            self.get_logger().warning('If you desire to recalibrate delet the file: mpu6050_calibration.json first.')
             response.success = True
             response.message = "IMU Calibration loaded successfully"
             return response
