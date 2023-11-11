@@ -5,7 +5,7 @@ from rclpy.node import Node
 #from std_srvs.srv import Trigger, Trigger_Response
 from std_srvs.srv import Trigger
 from time import sleep  
-
+import json
 
 # MPU650 
 PWR_MGMT_1   = 0x6B
@@ -98,6 +98,17 @@ class ImuPublisherNode(Node):
                 value = value - 65536
         return value
 
+    def save_calibration_to_json(self, filename="mpu650_calibration.json"):
+    calibration_data = {
+        "acc_x_avg": self.acc_x_avg,
+        "acc_y_avg": self.acc_y_avg,
+        "acc_z_avg": self.acc_z_avg,
+        "gyro_x_avg":self.gyro_x_avg,
+        "gyro_y_avg":self.gyro_y_avg,
+        "gyro_z_avg":self.gyro_z_avg
+    }
+    with open(filename, "w") as file:
+        json.dump(calibration_data, file)
 
 
     def calibrate_accelerometer(self, num_samples=SAMPLES):
@@ -145,13 +156,27 @@ class ImuPublisherNode(Node):
         #return (gyro_x_avg, gyro_y_avg, gyro_z_avg)
 
 
+    def load_calibration_from_json(self, filename="mpu650_calibration.json"):
+    try:
+        with open(filename, "r") as file:
+            calibration_data = json.load(file)
+            self.acc_x_avg = calibration_data["acc_x_avg"]
+            self.acc_y_avg = calibration_data["acc_y_avg"]
+            self.acc_z_avg = calibration_data["acc_z_avg"]
+            self.gyro_x_avg = calibration_data["gyro_x_avg"]
+            self.gyro_y_avg = calibration_data["gyro_y_avg"]
+            self.gyro_z_avg = calibration_data["gyro_z_avg"]
+        return True
+    except FileNotFoundError:
+        return False
+
 
     def handle_calibration_request(self, request, resp):
         # Code to perform calibration
         # You can add your accelerometer and gyroscope calibration logic here
         self.get_logger().info('Calibrating IMU...')
         #self.get_logger().info('Calibrating IMU with: '+str(request)+" "+str(resp))
-
+        
         # Perform calibration
         self.get_logger().info('Start calibrating IMU accelerometer')
         self.calibrate_accelerometer() 
