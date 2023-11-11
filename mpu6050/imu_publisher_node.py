@@ -40,7 +40,6 @@ class ImuPublisherNode(Node):
         self.imu_publisher = self.create_publisher(Imu, 'mpu6050/imu/data', 10)
         #self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
         self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
-        self.timer = self.create_timer(0.1, self.publish_imu_data)  # publish every 0.1 sec - Adjust the timer period as needed
         self.bus = smbus.SMBus(6)   # I2C ch6
         self.Device_Address = 0x68  # MPU6050 device address
         self.MPU_Init()
@@ -59,8 +58,9 @@ class ImuPublisherNode(Node):
         self.gyro_x_filtered = 0.0
         self.gyro_y_filtered = 0.0
         self.gyro_z_filtered = 0.0
-
         self.alpha = LPF_A  # Filter constant, adjust as needed
+
+        self.timer = self.create_timer(1.0, self.publish_imu_data)  # publish every 0.1 sec - Adjust the timer period as needed
 
 
     def low_pass_filter(self, current_value, last_filtered_value):
