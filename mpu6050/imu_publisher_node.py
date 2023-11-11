@@ -107,8 +107,8 @@ class ImuPublisherNode(Node):
             "gyro_y_avg":self.gyro_y_avg,
             "gyro_z_avg":self.gyro_z_avg
         }
-    with open(filename, "w") as file:
-        json.dump(calibration_data, file)
+        with open(filename, "w") as file:
+            json.dump(calibration_data, file)
 
 
     def calibrate_accelerometer(self, num_samples=SAMPLES):
