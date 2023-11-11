@@ -99,14 +99,14 @@ class ImuPublisherNode(Node):
         return value
 
     def save_calibration_to_json(self, filename="mpu650_calibration.json"):
-    calibration_data = {
-        "acc_x_avg": self.acc_x_avg,
-        "acc_y_avg": self.acc_y_avg,
-        "acc_z_avg": self.acc_z_avg,
-        "gyro_x_avg":self.gyro_x_avg,
-        "gyro_y_avg":self.gyro_y_avg,
-        "gyro_z_avg":self.gyro_z_avg
-    }
+        calibration_data = {
+            "acc_x_avg": self.acc_x_avg,
+            "acc_y_avg": self.acc_y_avg,
+            "acc_z_avg": self.acc_z_avg,
+            "gyro_x_avg":self.gyro_x_avg,
+            "gyro_y_avg":self.gyro_y_avg,
+            "gyro_z_avg":self.gyro_z_avg
+        }
     with open(filename, "w") as file:
         json.dump(calibration_data, file)
 
@@ -174,20 +174,27 @@ class ImuPublisherNode(Node):
     def handle_calibration_request(self, request, resp):
         # Code to perform calibration
         # You can add your accelerometer and gyroscope calibration logic here
-        self.get_logger().info('Calibrating IMU...')
+        self.get_logger().info('Recived calibrating MPU650 Reques...')
         #self.get_logger().info('Calibrating IMU with: '+str(request)+" "+str(resp))
-        
-        # Perform calibration
-        self.get_logger().info('Start calibrating IMU accelerometer')
-        self.calibrate_accelerometer() 
-        self.get_logger().info('Start calibrating IMU gyroscope')
-        self.calibrate_gyroscope()
-
         response = Trigger.Response()
-        response.success = True
-        response.message = "IMU Calibration completed successfully"
-        return response
 
+        
+        if load_calibration_from_json() {
+            self.get_logger().info('MPU650 calibration file found,loading calibration data done.')
+            response.success = True
+            response.message = "IMU Calibration loaded successfully"
+            return response
+        }
+        else {
+            # Perform calibration
+            self.get_logger().info('Start calibrating IMU accelerometer')
+            self.calibrate_accelerometer() 
+            self.get_logger().info('Start calibrating IMU gyroscope')
+            self.calibrate_gyroscope()
+            response.success = True
+            response.message = "IMU Calibration process completed successfully"
+            return response
+        }
 
 
 
