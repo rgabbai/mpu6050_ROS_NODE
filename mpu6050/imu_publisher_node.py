@@ -20,8 +20,9 @@ GYRO_XOUT_H  = 0x43
 GYRO_YOUT_H  = 0x45
 GYRO_ZOUT_H  = 0x47
 
-ACC_FACTOR   = 16384.0     # 2g
-GYRO_FACTOR  = 131.0       # +/-250
+ACC_FACTOR   = 16384.0     #mpu6050 spec for  2g
+GYRO_FACTOR  = 131.0       #mpu6050 spec for  +/-250
+GYRO_TUNE    = 7.2222222   # for tuning 90 in reality to 90 in yaw - TBD
 TEMP_A       = 340.0       # C = temp_raw/TEMP_A+TEMP_B
 TEMP_B       = 36.53
 
@@ -192,9 +193,9 @@ class ImuPublisherNode(Node):
         Ay = acc_y/ACC_FACTOR
         Az = acc_z/ACC_FACTOR    
       
-        Gx = gyro_x/GYRO_FACTOR/5.0
-        Gy = gyro_y/GYRO_FACTOR/5.0
-        Gz = gyro_z/GYRO_FACTOR/5.0
+        Gx = gyro_x/GYRO_FACTOR/GYRO_TUNE
+        Gy = gyro_y/GYRO_FACTOR/GYRO_TUNE
+        Gz = gyro_z/GYRO_FACTOR/GYRO_TUNE
 
         # Apply the low-pass filter to the accelerometer data
         self.acc_x_filtered = self.low_pass_filter(Ax, self.acc_x_filtered)
