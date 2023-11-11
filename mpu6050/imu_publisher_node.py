@@ -157,18 +157,18 @@ class ImuPublisherNode(Node):
 
 
     def load_calibration_from_json(self, filename="mpu650_calibration.json"):
-    try:
-        with open(filename, "r") as file:
-            calibration_data = json.load(file)
-            self.acc_x_avg = calibration_data["acc_x_avg"]
-            self.acc_y_avg = calibration_data["acc_y_avg"]
-            self.acc_z_avg = calibration_data["acc_z_avg"]
-            self.gyro_x_avg = calibration_data["gyro_x_avg"]
-            self.gyro_y_avg = calibration_data["gyro_y_avg"]
-            self.gyro_z_avg = calibration_data["gyro_z_avg"]
-        return True
-    except FileNotFoundError:
-        return False
+        try:
+            with open(filename, "r") as file:
+                calibration_data = json.load(file)
+                self.acc_x_avg = calibration_data["acc_x_avg"]
+                self.acc_y_avg = calibration_data["acc_y_avg"]
+                self.acc_z_avg = calibration_data["acc_z_avg"]
+                self.gyro_x_avg = calibration_data["gyro_x_avg"]
+                self.gyro_y_avg = calibration_data["gyro_y_avg"]
+                self.gyro_z_avg = calibration_data["gyro_z_avg"]
+            return True
+        except FileNotFoundError:
+            return False
 
 
     def handle_calibration_request(self, request, resp):
