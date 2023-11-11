@@ -179,7 +179,7 @@ class ImuPublisherNode(Node):
         response = Trigger.Response()
 
         
-        if load_calibration_from_json():
+        if self.load_calibration_from_json():
             self.get_logger().info('MPU650 calibration file found,loading calibration data done.')
             response.success = True
             response.message = "IMU Calibration loaded successfully"
@@ -191,7 +191,7 @@ class ImuPublisherNode(Node):
             self.calibrate_accelerometer() 
             self.get_logger().info('Start calibrating IMU gyroscope')
             self.calibrate_gyroscope()
-            save_calibration_to_json()
+            self.save_calibration_to_json()
             response.success = True
             response.message = "IMU Calibration process completed successfully and saved to file:mpu650_calibration.json "
             return response
