@@ -6,6 +6,8 @@ from rclpy.node import Node
 from std_srvs.srv import Trigger
 from time import sleep  
 import json
+from imu_calibration_pkg.srv import CalibrateIMU
+
 
 # MPU650 
 PWR_MGMT_1   = 0x6B
@@ -27,9 +29,11 @@ TEMP_A       = 340.0       # C = temp_raw/TEMP_A+TEMP_B
 TEMP_B       = 36.53
 
 # Calibration constants
+SHORT_SAMPLES = 500  # Number of samples for a short calibration
+LONG_SAMPLES  = 2000  # Number of samples for a long calibration
 SAMPLES      = 2000  # calibration reads
 TIME_BTWEEN_SAMPLE = 0.001  # 1ms
-LPF_A        = 0.1   # Low pass filter alfa 
+LPF_A        = 0.05   # Low pass filter alfa 
 
 
 #bus = smbus.SMBus(6) 	# I2C ch6 
@@ -40,7 +44,10 @@ class ImuPublisherNode(Node):
         super().__init__('imu_publisher_node')
         self.imu_publisher = self.create_publisher(Imu, 'mpu6050/imu/data', 10)
         #self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
-        self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
+        #self.calibration_service = self.create_service(Trigger, 'calibrate_imu', self.handle_calibration_request)
+        self.calibration_service = self.create_service(
+            CalibrateIMU, 'calibrate_imu', self.handle_calibration_request
+        )
         self.bus = smbus.SMBus(6)   # I2C ch6
         self.Device_Address = 0x68  # MPU6050 device address
         self.MPU_Init()
@@ -179,7 +186,7 @@ class ImuPublisherNode(Node):
         except FileNotFoundError:
             return False
 
-
+    '''
     def handle_calibration_request(self, request, resp):
         # Code to perform calibration
         # You can add your accelerometer and gyroscope calibration logic here
@@ -205,8 +212,50 @@ class ImuPublisherNode(Node):
             response.success = True
             response.message = "IMU Calibration process completed successfully and saved to file:mpu650_calibration.json "
             return response
-        
+    '''
+    def handle_calibration_request(self, request, response):
+        self.get_logger().info(f'Received calibration request with mode: {request.mode}')
 
+        if request.mode == "load":
+            if self.load_calibration_from_json():
+                self.get_logger().info('Calibration file loaded successfully.')
+                response.success = True
+                response.message = "Loaded calibration data from file."
+            else:
+                self.get_logger().warning('No calibration file found. Please perform calibration.')
+                response.success = False
+                response.message = "Calibration file not found. Please perform calibration."
+            return response
+
+        elif request.mode == "short":
+            self.get_logger().info('Performing short calibration of IMU.')
+            self.calibrate_accelerometer(SHORT_SAMPLES)
+            self.calibrate_gyroscope(SHORT_SAMPLES)
+            self.save_calibration_to_json()
+            response.success = True
+            response.message = "Short calibration completed and saved."
+
+        elif request.mode == "long":
+            self.get_logger().info('Performing long calibration of IMU.')
+            self.calibrate_accelerometer(LONG_SAMPLES)
+            self.calibrate_gyroscope(LONG_SAMPLES)
+            self.save_calibration_to_json()
+            response.success = True
+            response.message = "Long calibration completed and saved."
+
+        else:
+            self.get_logger().warning(f"Unknown calibration mode: {request.mode}")
+            response.success = False
+            response.message = f"Unknown mode: {request.mode}"
+
+        return response
+
+
+
+    def read_temperature(self):
+        temp_raw = self.read_raw_data(0x41)  # 0x41 is the temperature register
+        temperature = temp_raw / TEMP_A + TEMP_B
+        return temperature
 
 
 
@@ -218,6 +267,10 @@ class ImuPublisherNode(Node):
         imu_msg.header.stamp.sec = now.seconds_nanoseconds()[0]
         imu_msg.header.stamp.nanosec = now.seconds_nanoseconds()[1]
         imu_msg.header.frame_id = "mpu6050"
+
+        imu_msg.orientation_covariance = [0.0] * 9
+        imu_msg.angular_velocity_covariance = [0.01] * 9  # Adjust as necessary
+        imu_msg.linear_acceleration_covariance = [0.1] * 9  # Adjust as necessary
 
 
         # Your sensor reading and processing code here
@@ -250,7 +303,9 @@ class ImuPublisherNode(Node):
         self.gyro_y_filtered = self.low_pass_filter(Gy, self.gyro_y_filtered)
         self.gyro_z_filtered = self.low_pass_filter(Gz, self.gyro_z_filtered)
 
-
+        # Read and log temperature - might need to do compensations due bias changes
+        temperature = self.read_temperature()
+        self.get_logger().info(f"MPU6050 Temperature: {temperature:.2f}°C")
 
 
 
