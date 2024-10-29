@@ -34,7 +34,7 @@ LONG_SAMPLES  = 2000  # Number of samples for a long calibration
 SAMPLES      = 2000  # calibration reads
 TIME_BTWEEN_SAMPLE = 0.001  # 1ms
 LPF_A        = 0.05   # Low pass filter alfa 
-TEMP_DIFF    = 1.0    # If Temp change over 1C generate a warning  
+TEMP_DIFF    = 0.5    # If Temp change over 0.5C generate a warning  
 
 
 #bus = smbus.SMBus(6) 	# I2C ch6 
