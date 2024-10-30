@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu
+from imu_calibration_pkg.srv import GetRPY  # Import the custom service
 from geometry_msgs.msg import Vector3
 import transforms3d  # New library for quaternion handling
 import numpy as np
@@ -31,10 +32,28 @@ class ImuOffsetCorrector(Node):
         
         # Publisher for corrected IMU data
         self.publisher = self.create_publisher(Imu, '/imu/data_corrected', 10)
+
+        # Service to get roll, pitch, yaw
+        self.srv = self.create_service(GetRPY, 'get_rpy', self.get_rpy_callback)
+        # Variables to store the latest RPY values
+        self.latest_roll = 0.0
+        self.latest_pitch = 0.0
+        self.latest_yaw = 0.0
         
         # Publisher for roll, pitch, yaw values
-        self.rpy_publisher = self.create_publisher(Vector3, '/imu/rpy', 10)
+        #self.rpy_publisher = self.create_publisher(Vector3, '/imu/rpy', 10)
 
+
+
+    def get_rpy_callback(self, request, response):
+        """
+        Handle the service request to provide roll, pitch, and yaw data.
+        """
+        response.roll = self.latest_roll
+        response.pitch = self.latest_pitch
+        response.yaw = self.latest_yaw
+        return response
+    
     def imu_callback(self, msg):
         # Extract orientation from the IMU message (quaternion)
         orientation_quat = [
@@ -56,6 +75,7 @@ class ImuOffsetCorrector(Node):
         
         # Corrected orientation remains as it is for simplicity (but could involve matrix adjustments)
         corrected_msg = Imu()
+        corrected_msg.header.frame_id = msg.header.frame_id
         corrected_msg.header = msg.header
         corrected_msg.orientation = msg.orientation  # Keep the same orientation (for simplicity)
         corrected_msg.angular_velocity = msg.angular_velocity  # Angular velocity unchanged
@@ -64,7 +84,27 @@ class ImuOffsetCorrector(Node):
         corrected_msg.linear_acceleration.x = msg.linear_acceleration.x - induced_velocity[0]
         corrected_msg.linear_acceleration.y = msg.linear_acceleration.y - induced_velocity[1]
         corrected_msg.linear_acceleration.z = msg.linear_acceleration.z - induced_velocity[2]
+
+        corrected_msg.orientation_covariance = [1e-9] * 9
+
         
+        # Normalize quaternion before publishing
+        '''
+        q_length = math.sqrt(
+            corrected_msg.orientation.w ** 2 +
+            corrected_msg.orientation.x ** 2 +
+            corrected_msg.orientation.y ** 2 +
+            corrected_msg.orientation.z ** 2
+        )
+
+        corrected_msg.orientation.w /= q_length
+        corrected_msg.orientation.x /= q_length
+        corrected_msg.orientation.y /= q_length
+        corrected_msg.orientation.z /= q_length
+        '''
+
+
+
         # Convert corrected quaternion to roll, pitch, and yaw using transforms3d
         corrected_orientation_quat = [
             corrected_msg.orientation.w,
@@ -87,8 +127,11 @@ class ImuOffsetCorrector(Node):
         rpy_msg.x = roll_deg
         rpy_msg.y = pitch_deg
         rpy_msg.z = yaw_deg
-        self.rpy_publisher.publish(rpy_msg)
-        
+        #self.rpy_publisher.publish(rpy_msg)
+        # Store the latest roll, pitch, and yaw values
+        self.latest_roll = roll_deg
+        self.latest_pitch = pitch_deg
+        self.latest_yaw = yaw_deg
         # Publish the corrected IMU data
         self.publisher.publish(corrected_msg)
     
