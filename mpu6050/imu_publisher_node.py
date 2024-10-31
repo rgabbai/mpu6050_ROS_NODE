@@ -242,6 +242,9 @@ class ImuPublisherNode(Node):
                 response.message = "Calibration file not found. Please perform calibration."
             return response
 
+        elif request.mode == "rest":
+            self.get_logger().info('Performing IMU sensor reset.')
+            self.MPU_Init()
         elif request.mode == "short":
             self.get_logger().info('Performing short calibration of IMU.')
             self.perform_calibration(SHORT_SAMPLES)
