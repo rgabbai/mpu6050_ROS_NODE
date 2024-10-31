@@ -247,18 +247,20 @@ class ImuPublisherNode(Node):
             self.MPU_Init()
         elif request.mode == "short":
             self.get_logger().info('Performing short calibration of IMU.')
+            self.MPU_Init() # reset heading to 0
             self.perform_calibration(SHORT_SAMPLES)
             response.success = True
             response.message = "Short calibration completed and saved."
 
         elif request.mode == "long":
             self.get_logger().info('Performing long calibration of IMU.')
+            self.MPU_Init() # reset heading to 0
             self.perform_calibration(LONG_SAMPLES)
             response.success = True
             response.message = "Long calibration completed and saved."
         elif request.mode == "temp_check":
             self.get_logger().info('check if need to calibrate due temp chage.')
-            if self.need_calb:
+            if self.need_calb: # no heading reset - maintain heading.
                 self.perform_calibration(LONG_SAMPLES)
                 response.success = True
                 response.message = "Calibration completed and saved due temp change."
