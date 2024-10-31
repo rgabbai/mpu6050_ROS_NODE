@@ -81,7 +81,8 @@ class ImuPublisherNode(Node):
         self.temp = self.read_raw_data(0x41)  # 0x41 is the temperature register
         self.calibration_temp = 0.0
         self.need_calb = False
-
+        # Perform initial calibration 
+        self.perform_calibration(LONG_SAMPLES)
         self.timer = self.create_timer(0.001, self.publish_imu_data)  # publish every 1 msec - Adjust the timer period as needed
 
 
@@ -218,6 +219,14 @@ class ImuPublisherNode(Node):
             response.message = "IMU Calibration process completed successfully and saved to file:mpu650_calibration.json "
             return response
     '''
+
+    def perform_calibration(self,samples):      
+            self.get_logger().info(f'Performing  calibration of IMU using #{samples} samples.')
+            self.calibrate_accelerometer(samples)
+            self.calibrate_gyroscope(samples)
+            self.save_calibration_to_json()
+            self.calibration_temp = self.read_raw_data(0x41) # Read temp
+
     def handle_calibration_request(self, request, response):
         self.get_logger().info(f'Received calibration request with mode: {request.mode}')
 
@@ -234,29 +243,23 @@ class ImuPublisherNode(Node):
 
         elif request.mode == "short":
             self.get_logger().info('Performing short calibration of IMU.')
-            self.calibrate_accelerometer(SHORT_SAMPLES)
-            self.calibrate_gyroscope(SHORT_SAMPLES)
-            self.save_calibration_to_json()
+            self.perform_calibration(SHORT_SAMPLES)
             response.success = True
             self.calibration_temp = self.read_raw_data(0x41) # Read temp
             response.message = "Short calibration completed and saved."
 
         elif request.mode == "long":
             self.get_logger().info('Performing long calibration of IMU.')
-            self.calibrate_accelerometer(LONG_SAMPLES)
-            self.calibrate_gyroscope(LONG_SAMPLES)
-            self.save_calibration_to_json()
+            self.perform_calibration(LONG_SAMPLES)
             response.success = True
             self.calibration_temp = self.read_raw_data(0x41) # Read temp
             response.message = "Long calibration completed and saved."
         elif request.mode == "temp_check":
             self.get_logger().info('check if need to calibrate due temp chage.')
             if self.need_calb:
-                self.calibrate_accelerometer(SHORT_SAMPLES)
-                self.calibrate_gyroscope(SHORT_SAMPLES)
-                self.save_calibration_to_json()
+                self.perform_calibration(LONG_SAMPLES)
                 response.success = True
-                response.message = "Short calibration completed and saved due temp change."
+                response.message = "Calibration completed and saved due temp change."
                 self.need_calb = False
             else: 
                 response.success = True
