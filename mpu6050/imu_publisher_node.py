@@ -34,7 +34,7 @@ LONG_SAMPLES  = 2000  # Number of samples for a long calibration
 SAMPLES      = 2000  # calibration reads
 TIME_BTWEEN_SAMPLE = 0.001  # 1ms
 LPF_A        = 0.05   # Low pass filter alfa 
-TEMP_DIFF    = 0.5    # If Temp change over 0.5C generate a warning  
+TEMP_DIFF    = 2.0    # If Temp change over 2.0C generate a warning  
 
 
 #bus = smbus.SMBus(6) 	# I2C ch6 
@@ -79,7 +79,7 @@ class ImuPublisherNode(Node):
         self.alpha = LPF_A  # Filter constant, adjust as needed
 
         self.temp = self.read_raw_data(0x41)  # 0x41 is the temperature register
-        self.prev_temp = self.temp
+        self.calibration_temp = 0.0
         self.need_calb = False
 
         self.timer = self.create_timer(0.001, self.publish_imu_data)  # publish every 1 msec - Adjust the timer period as needed
@@ -238,6 +238,7 @@ class ImuPublisherNode(Node):
             self.calibrate_gyroscope(SHORT_SAMPLES)
             self.save_calibration_to_json()
             response.success = True
+            self.calibration_temp = self.read_raw_data(0x41) # Read temp
             response.message = "Short calibration completed and saved."
 
         elif request.mode == "long":
@@ -246,6 +247,7 @@ class ImuPublisherNode(Node):
             self.calibrate_gyroscope(LONG_SAMPLES)
             self.save_calibration_to_json()
             response.success = True
+            self.calibration_temp = self.read_raw_data(0x41) # Read temp
             response.message = "Long calibration completed and saved."
         elif request.mode == "temp_check":
             self.get_logger().info('check if need to calibrate due temp chage.')
@@ -321,10 +323,9 @@ class ImuPublisherNode(Node):
 
         # Read and log temperature - might need to do compensations due bias changes
         self.temp = self.read_temperature()
-        if abs(self.temp-self.prev_temp) > TEMP_DIFF:
-            self.get_logger().info(f"Warning MPU6050 Temperature change: {self.temp:.2f}°C")
+        if abs(self.temp-self.calibration_temp) > TEMP_DIFF:
+            self.get_logger().info(f"Warning MPU6050 Temperature change from last calibration over {TEMP_DIFF:2.f}°C current temp:{self.temp:.2f}°C")
             self.need_calb = True
-        self.prev_temp = self.temp
 
 
 
