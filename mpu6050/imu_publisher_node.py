@@ -326,7 +326,8 @@ class ImuPublisherNode(Node):
         # Read and log temperature - might need to do compensations due bias changes
         self.temp = self.read_temperature()
         if abs(self.temp-self.calibration_temp) > TEMP_DIFF:
-            self.get_logger().info(f"Warning MPU6050 Temperature change from last calibration over {TEMP_DIFF:.2f}°C current temp:{self.temp:.2f}°C")
+            self.get_logger().info(f"Warning MPU6050 Temperature change from last calibration over {TEMP_DIFF:.2f}°C")
+            self.get_logger().info(f"Last calibration temperature {self.calibration_temp:.2f}°C current temp:{self.temp:.2f}°C")
             self.need_calb = True
 
 
