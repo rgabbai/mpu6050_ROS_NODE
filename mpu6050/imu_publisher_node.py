@@ -60,6 +60,7 @@ class ImuPublisherNode(Node):
         self.gyro_y_avg = 0.0
         self.gyro_z_avg = 0.0
 
+        '''
         if self.load_calibration_from_json():
             self.get_logger().info('MPU6050 calibration file found,loading calibration data done.')
         else:
@@ -67,7 +68,7 @@ class ImuPublisherNode(Node):
             self.get_logger().info('Perform the following calibration steps:')
             self.get_logger().info('1. Place mpu6050 is in correct position ')
             self.get_logger().info('2. issue service request: ros2 service call /calibrate_imu std_srvs/srv/Trigger \"\{\}\"')
-
+        '''
  
         #filter
         self.acc_x_filtered = 0.0
