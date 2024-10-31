@@ -226,7 +226,7 @@ class ImuPublisherNode(Node):
             self.calibrate_accelerometer(samples)
             self.calibrate_gyroscope(samples)
             self.save_calibration_to_json()
-            self.calibration_temp = self.read_raw_data(0x41) # Read temp
+            self.calibration_temp = self.read_temperature()
 
     def handle_calibration_request(self, request, response):
         self.get_logger().info(f'Received calibration request with mode: {request.mode}')
@@ -246,14 +246,12 @@ class ImuPublisherNode(Node):
             self.get_logger().info('Performing short calibration of IMU.')
             self.perform_calibration(SHORT_SAMPLES)
             response.success = True
-            self.calibration_temp = self.read_raw_data(0x41) # Read temp
             response.message = "Short calibration completed and saved."
 
         elif request.mode == "long":
             self.get_logger().info('Performing long calibration of IMU.')
             self.perform_calibration(LONG_SAMPLES)
             response.success = True
-            self.calibration_temp = self.read_raw_data(0x41) # Read temp
             response.message = "Long calibration completed and saved."
         elif request.mode == "temp_check":
             self.get_logger().info('check if need to calibrate due temp chage.')
